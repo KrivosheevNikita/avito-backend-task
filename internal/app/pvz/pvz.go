@@ -2,6 +2,7 @@ package pvz
 
 import (
 	"pvz-service/internal/db"
+	"pvz-service/internal/metrics"
 	"pvz-service/internal/models"
 	"time"
 
@@ -56,7 +57,13 @@ func CreatePVZ(newPVZ *models.PVZ) error {
 	}
 	newPVZ.ID = uuid.New()
 	newPVZ.RegistrationDate = time.Now()
-	return repo.SavePVZ(newPVZ)
+
+	err := repo.SavePVZ(newPVZ)
+	if err == nil {
+		metrics.PVZCreated.Inc()
+	}
+
+	return err
 }
 
 func GetPVZList(startDate, endDate *time.Time, page, limit int) ([]PVZWithReceptions, error) {

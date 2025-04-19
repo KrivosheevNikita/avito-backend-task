@@ -14,6 +14,8 @@ import (
 func RegisterRoutes() *mux.Router {
 	r := mux.NewRouter()
 
+	r.Use(middleware.MetricsMiddleware)
+
 	r.HandleFunc("/dummyLogin", auth.DummyLoginHandler).Methods("POST")
 	r.HandleFunc("/register", auth.RegisterHandler).Methods("POST")
 	r.HandleFunc("/login", auth.LoginHandler).Methods("POST")

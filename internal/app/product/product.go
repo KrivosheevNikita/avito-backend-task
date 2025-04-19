@@ -2,6 +2,7 @@ package product
 
 import (
 	"pvz-service/internal/db"
+	"pvz-service/internal/metrics"
 	"pvz-service/internal/models"
 	"time"
 
@@ -53,6 +54,8 @@ func AddProduct(pvzId uuid.UUID, productType string) (*models.Product, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	metrics.ProductsAdded.Inc()
 
 	return product, nil
 }

@@ -8,10 +8,13 @@ import (
 	"pvz-service/api/grpc/pvz/pvz_v1"
 	"pvz-service/internal/config"
 	"pvz-service/internal/db"
+	"pvz-service/internal/metrics"
+	"pvz-service/internal/middleware"
 	"pvz-service/internal/transport/grpc/pvz"
 	"pvz-service/internal/transport/handlers"
 	"pvz-service/pkg/logger"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -31,7 +34,9 @@ func startGRPCServer(address string) {
 		log.Fatalf("Ошибка запуска gRPC-сервера: %v", err)
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(middleware.GrpcMetrics))
+
 	pvz_v1.RegisterPVZServiceServer(grpcServer, pvz.NewPVZServer())
 	reflection.Register(grpcServer)
 
@@ -41,8 +46,17 @@ func startGRPCServer(address string) {
 	}
 }
 
+func startMetricsServer() {
+	http.Handle("/metrics", promhttp.Handler())
+	log.Println("Метрики доступны на :9000/metrics")
+	if err := http.ListenAndServe(":9000", nil); err != nil {
+		log.Fatalf("Ошибка запуска сервера метрик: %v", err)
+	}
+}
+
 func main() {
 	logger.Init()
+	metrics.Init()
 
 	cfg, err := config.LoadConfig()
 	if err != nil {
@@ -56,5 +70,6 @@ func main() {
 	defer dbPool.Close()
 
 	go startHTTPServer(cfg.HTTP.ListenAddress())
-	startGRPCServer(cfg.GRPC.ListenAddress())
+	go startGRPCServer(cfg.GRPC.ListenAddress())
+	startMetricsServer()
 }

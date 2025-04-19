@@ -2,6 +2,7 @@ package reception
 
 import (
 	"pvz-service/internal/db"
+	"pvz-service/internal/metrics"
 	"pvz-service/internal/models"
 	"time"
 
@@ -44,6 +45,7 @@ func CreateReception(pvzID uuid.UUID) (*models.Reception, error) {
 	if err := repo.SaveReception(newReception); err != nil {
 		return nil, err
 	}
+	metrics.ReceptionsCreated.Inc()
 
 	return newReception, nil
 }
